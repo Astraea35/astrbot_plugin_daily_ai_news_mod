@@ -1,0 +1,91 @@
+{
+	"push_hour": {
+		"type": "int",
+		"description": "每日推送时间（小时）",
+		"hint": "0-23，默认为 8（早上8点）",
+		"default": 8
+	},
+	"push_minute": {
+		"type": "int",
+		"description": "每日推送时间（分钟）",
+		"hint": "0-59，默认为 0",
+		"default": 0
+	},
+	"rss_poll_interval": {
+		"type": "int",
+		"description": "RSS 轮询间隔（秒）",
+		"hint": "当 RSS 尚未更新当日内容时，每隔多少秒重新检查一次，默认 600 秒（10分钟）",
+		"default": 600
+	},
+	"enable_ai_summary": {
+		"type": "bool",
+		"description": "是否开启 AI 总结",
+		"hint": "开启后，将调用配置的大模型对早报内容进行总结提炼。关闭则直接推送原文摘要。",
+		"default": true
+	},
+	"render_mode": {
+		"type": "string",
+		"description": "推送及获取模式",
+		"hint": "请选择输出格式。text: 纯文本模式；image: 浏览器高保真长图模式",
+		"default": "text",
+		"options": ["text", "image"]
+	},
+	"theme": {
+		"type": "string",
+		"description": "长图主题配色样式",
+		"hint": "light: 优雅卡片护眼白底；dark: 黑金极客科技暗黑卡片",
+		"default": "light",
+		"options": ["light", "dark"]
+	},
+	"image_scale_factor": {
+		"type": "int",
+		"description": "图片清晰度倍率 (视网膜超采样)",
+		"hint": "1: 常规清晰度；2: 2倍高清抗锯齿（推荐）；4: 4K极致无毛边超清",
+		"default": 2,
+		"options": [1, 2, 4]
+	},
+	"image_width": {
+		"type": "int",
+		"description": "浏览器长图画布标准宽度 (px)",
+		"hint": "默认推荐 1400 px",
+		"default": 1400
+	},
+	"image_font_size": {
+		"type": "int",
+		"description": "长图基础字号 (px)",
+		"hint": "针对大屏高分辨率手机，默认推荐以 32 作为基础字号进行全要素弹性比例放大",
+		"default": 32
+	},
+	"image_output_format": {
+		"type": "string",
+		"description": "图片输出格式",
+		"hint": "默认为 png，也支持高压缩比的 jpeg 或 webp",
+		"default": "png",
+		"options": ["png", "jpeg", "webp"]
+	},
+	"image_quality": {
+		"type": "int",
+		"description": "图片输出质量 (1-100)",
+		"hint": "针对 jpeg 格式有效，默认 100",
+		"default": 100
+	},
+	"summary_provider_id": {
+		"type": "string",
+		"description": "AI 总结使用的供应商 ID",
+		"hint": "点击右侧按钮，在弹窗中直接选取你已在 AstrBot 中绑定的模型提供商。留空则自动使用系统默认模型。",
+		"default": "",
+		"_special": "select_provider"
+	},
+	"subscribed_groups": {
+		"type": "text",
+		"description": "订阅推送的群聊列表（每行一个）",
+		"hint": "支持跨平台格式 {机器人名称}:{群聊ID}。如果不加前缀仅填纯数字，默认为 QQ 群号。也可通过群内发送 /ainews_sub 指令订阅。",
+		"default": ""
+	},
+	"subscribed_users": {
+		"type": "text",
+		"description": "订阅推送的私聊列表（每行一个）",
+		"hint": "支持跨平台格式 {机器人名称}:{私聊账号ID}。如果不加前缀仅填纯数字，默认为私聊 QQ 号。也可通过私聊发送 /ainews_sub 指令订阅。",
+		"default": ""
+	}
+}
