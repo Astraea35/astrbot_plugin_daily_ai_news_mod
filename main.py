@@ -200,7 +200,7 @@ class UniversalPlaywrightRenderer:
     "astrbot_plugin_daily_ai_news_mod",
     "Astraea35",
     "订阅橘鸦AI日报并进行AI总结（魔改全控版）",
-    "1.03",
+    "1.04",
     "https://github.com/Astraea35/astrbot_plugin_daily_ai_news_mod",
 )
 class DailyAINewsPlugin(Star):
@@ -252,7 +252,10 @@ class DailyAINewsPlugin(Star):
                 yield event.plain_result("😞 获取或生成 AI 早报失败，请稍后再试。")
                 return
 
-        render_mode = self.config.get("render_mode", "text").strip().lower()
+        render_mode = (
+            "text" if event.get_platform_name() == "telegram"
+            else self.config.get("render_mode", "text").strip().lower()
+        )
         if render_mode == "image":
             img_path = await self._render_text_to_image(text, article_date)
             if img_path and os.path.exists(img_path):
@@ -427,7 +430,12 @@ class DailyAINewsPlugin(Star):
         success_count = 0
         for umo in targets:
             try:
-                await self.context.send_message(umo, chain)
+                platform = self.context.get_platform_inst(umo.split(":", 1)[0])
+                outgoing = (
+                    MessageChain([Plain(text)])
+                    if platform and platform.meta().name == "telegram" else chain
+                )
+                await self.context.send_message(umo, outgoing)
                 success_count += 1
             except Exception: pass
 

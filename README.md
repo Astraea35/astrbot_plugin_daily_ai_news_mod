@@ -1,5 +1,8 @@
 # astrbot_plugin_daily_ai_news_mod
 
+Telegram 的手动查询和订阅推送默认使用 Markdown 文字，QQ 保留配置的长图
+模式。通过 NAS 联动平台使用时，处理中提示和结果会编辑同一条 TG 消息。
+
 每日 AI 资讯自动推送插件 (魔改版) - 为 [AstrBot](https://github.com/AstrBotDevs/AstrBot) 开发
 
 通过 RSS 订阅 [橘鸦 AI 日报](https://daily.juya.uk/rss.xml) 获取最新 AI 早报，经 **AI 总结** 后自动推送到各平台群聊 / 私聊。支持通过 Playwright 进行长图高清无缝渲染推送。
