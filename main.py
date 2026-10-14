@@ -241,13 +241,14 @@ class DailyAINewsPlugin(Star):
             return
 
         article_date = self._parse_article_date(article)
+        telegram = event.get_platform_name() == "telegram"
         cache = await self._read_summary_cache()
         cached = cache.get(article_date)
         
         if cached:
-            text = self._format_summary(cached["title"], cached["url"], cached["summary"], article_date)
+            text = self._format_summary(cached["title"], cached["url"], cached["summary"], article_date, telegram=telegram)
         else:
-            text = await self._get_or_create_summary(article, article_date)
+            text = await self._get_or_create_summary(article, article_date, telegram=telegram)
             if not text:
                 yield event.plain_result("😞 获取或生成 AI 早报失败，请稍后再试。")
                 return
@@ -432,7 +433,7 @@ class DailyAINewsPlugin(Star):
             try:
                 platform = self.context.get_platform_inst(umo.split(":", 1)[0])
                 outgoing = (
-                    MessageChain([Plain(text)])
+                    MessageChain([Plain(await self._get_or_create_summary(article, article_date, telegram=True) or text)])
                     if platform and platform.meta().name == "telegram" else chain
                 )
                 await self.context.send_message(umo, outgoing)
@@ -448,19 +449,19 @@ class DailyAINewsPlugin(Star):
 
     # ==================== 后台公共方法 ====================
 
-    async def _get_or_create_summary(self, article: Dict, article_date: str) -> Optional[str]:
-        if not self.config.get("enable_ai_summary", True): return self._format_fallback(article, article_date)
+    async def _get_or_create_summary(self, article: Dict, article_date: str, *, telegram: bool = False) -> Optional[str]:
+        if not self.config.get("enable_ai_summary", True): return self._format_fallback(article, article_date, telegram=telegram)
         cache = await self._read_summary_cache()
         cached = cache.get(article_date)
-        if cached: return self._format_summary(cached["title"], cached["url"], cached["summary"], article_date)
+        if cached: return self._format_summary(cached["title"], cached["url"], cached["summary"], article_date, telegram=telegram)
 
         summary = await self._summarize_with_ai(article["content"])
         if summary:
             cache = await self._read_summary_cache()
             cache[article_date] = {"title": article["title"], "url": article["link"], "summary": summary}
             await self._save_summary_cache(cache)
-            return self._format_summary(article["title"], article["link"], summary, article_date)
-        return self._format_fallback(article, article_date)
+            return self._format_summary(article["title"], article["link"], summary, article_date, telegram=telegram)
+        return self._format_fallback(article, article_date, telegram=telegram)
 
     async def _fetch_rss_latest(self) -> Optional[Dict]:
         try:
@@ -514,12 +515,16 @@ class DailyAINewsPlugin(Star):
         except Exception: pass
         return None
 
-    def _format_summary(self, title: str, url: str, summary: str, article_date: str) -> str:
+    def _format_summary(self, title: str, url: str, summary: str, article_date: str, *, telegram: bool = False) -> str:
+        if telegram:
+            return f"**AI 早报**\n\n{article_date}\n{title}\n\n{summary.strip()}\n\n**原文**\n{url}"
         return f"📰 AI 早报速递 | {article_date}\n============================\n\n📌 原文：{title}\n\n🤖 AI 总结：\n\n{summary}\n\n============================\n🔗 原文链接：{url}\n💡 发送 /ainews 随时获取最新资讯"
 
-    def _format_fallback(self, article: Dict, article_date: str) -> str:
+    def _format_fallback(self, article: Dict, article_date: str, *, telegram: bool = False) -> str:
         content = article.get("content", "")
         if len(content) > 500: content = content[:500] + "..."
+        if telegram:
+            return self._format_summary(article["title"], article.get("link", ""), content, article_date, telegram=True)
         return f"📰 AI 早报 | {article_date}\n============================\n\n📌 {article['title']}\n\n{content}\n\n============================\n🔗 原文链接：{article.get('link', '')}\n💡 发送 /ainews 随时获取最新资讯"
 
     def _clean_html(self, text: str) -> str:

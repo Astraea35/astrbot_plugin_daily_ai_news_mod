@@ -28,3 +28,18 @@ async def test_telegram_news_does_not_render_the_qq_image():
     results = [result async for result in plugin.cmd_ainews(event)]
     assert results[-1] == "**AI 新闻**\n完整新闻"
     plugin._render_text_to_image.assert_not_awaited()
+    plugin._get_or_create_summary.assert_awaited_once_with(
+        {"link": "https://example.test/news"}, "2026-10-14", telegram=True,
+    )
+
+
+def test_telegram_news_has_clear_sections_and_preserves_qq_layout():
+    plugin = module.DailyAINewsPlugin.__new__(module.DailyAINewsPlugin)
+    args = ("新闻标题", "https://example.test/news", "## 要点\n\n1. 第一条\n\n2. 第二条", "2026-10-15")
+    telegram = plugin._format_summary(*args, telegram=True)
+    qq = plugin._format_summary(*args)
+    assert telegram.startswith("**AI 早报**\n\n2026-10-15\n新闻标题\n\n")
+    assert "\n\n**原文**\nhttps://example.test/news" in telegram
+    assert "1. 第一条\n\n2. 第二条" in telegram
+    assert "====" not in telegram
+    assert "============================" in qq
