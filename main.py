@@ -200,7 +200,7 @@ class UniversalPlaywrightRenderer:
     "astrbot_plugin_daily_ai_news_mod",
     "Astraea35",
     "订阅橘鸦AI日报并进行AI总结（魔改全控版）",
-    "1.0.6",
+    "1.0.7",
     "https://github.com/Astraea35/astrbot_plugin_daily_ai_news_mod",
 )
 class DailyAINewsPlugin(Star):
@@ -538,26 +538,34 @@ class DailyAINewsPlugin(Star):
     def _format_summary(self, title: str, url: str, summary: str, article_date: str, *, telegram: bool = False) -> str:
         if telegram:
             clean_title = re.sub(r"\s+", " ", title).strip()
+            # 只有当标题不仅仅是日期/符号时才保留标题行，避免与顶部日期重复
+            is_date_only_title = not bool(re.sub(r"[\d\s\-_/年月日]", "", clean_title))
+            title_header = f"• **主题**：{clean_title}\n\n" if (clean_title and not is_date_only_title) else ""
+
             cleaned_lines = []
             for line in summary.strip().splitlines():
                 l = line.strip()
                 if not l:
                     continue
+                # 去除开头重复出现的日期要点行（如：2026年10月15日 AI早报要点）
+                if re.match(r"^(\d{4}[-/年]\d{1,2}[-/月]\d{1,2}|AI\s*早报)", l):
+                    continue
                 if re.match(r"^#{1,6}\s+", l):
-                    cleaned_lines.append(f"> **{re.sub(r'^#{1,6}\s+', '', l)}**")
+                    cleaned_lines.append(f"> 📌 **{re.sub(r'^#{1,6}\s+', '', l)}**")
                 elif re.match(r"^[-*•]\s+", l):
                     cleaned_lines.append(f"> • {re.sub(r'^[-*•]\s+', '', l)}")
-                elif re.match(r"^\d+[.)]\s+", l):
+                elif re.match(r"^\d+[.)]\s*", l):
                     cleaned_lines.append(f"> {l}")
                 else:
                     cleaned_lines.append(f"> {l}")
+
             quote_block = "\n".join(cleaned_lines) if cleaned_lines else f"> {summary.strip()}"
-            link_str = f"[阅读原文]({url})" if url else "暂无"
+            link_str = f"[点击查看完整资讯]({url})" if url else "暂无"
             return (
                 f"📰 **AI 科技早报** · `{article_date}`\n\n"
-                f"**【{clean_title}】**\n\n"
+                f"{title_header}"
                 f"{quote_block}\n\n"
-                f"🔗 来源：{link_str}"
+                f"🔗 **原文链接**：{link_str}"
             )
         return f"📰 AI 早报速递 | {article_date}\n============================\n\n📌 原文：{title}\n\n🤖 AI 总结：\n\n{summary}\n\n============================\n🔗 原文链接：{url}\n💡 发送 /ainews 随时获取最新资讯"
 

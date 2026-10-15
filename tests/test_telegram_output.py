@@ -40,8 +40,16 @@ def test_telegram_news_has_clear_sections_and_preserves_qq_layout():
     args = ("新闻标题", "https://example.test/news", "## 要点\n\n1. 第一条\n\n2. 第二条", "2026-10-15")
     telegram = plugin._format_summary(*args, telegram=True)
     qq = plugin._format_summary(*args)
-    assert telegram.startswith("📰 **AI 科技早报** · `2026-10-15`\n\n**【新闻标题】**\n\n")
-    assert "[阅读原文](https://example.test/news)" in telegram
-    assert "> 1. 第一条" in telegram
+    assert telegram.startswith("📰 **AI 科技早报** · `2026-10-15`\n\n• **主题**：新闻标题\n\n")
+    assert "[点击查看完整资讯](https://example.test/news)" in telegram
+    assert "> 1. 第一条\n> 2. 第二条" in telegram
     assert "====" not in telegram
     assert "============================" in qq
+
+    # 验证当标题为纯日期时，不生成重复的日期标题行
+    date_only_args = ("2026-10-15", "https://example.test/news", "2026年10月15日 AI早报要点\n\n1. 第一条\n\n2. 第二条", "2026-10-15")
+    date_telegram = plugin._format_summary(*date_only_args, telegram=True)
+    assert "• **主题**" not in date_telegram
+    assert date_telegram.count("2026-10-15") == 1
+    assert "> 1. 第一条\n> 2. 第二条" in date_telegram
+
