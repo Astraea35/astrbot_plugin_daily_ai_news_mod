@@ -1,0 +1,8 @@
+
+__pycache__/
+*.pyc
+上传GitHub.py
+upload.py
+upload.bat
+.pytest_cache/
+astrbot_plugin_daily_ai_news_mod/

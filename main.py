@@ -200,7 +200,7 @@ class UniversalPlaywrightRenderer:
     "astrbot_plugin_daily_ai_news_mod",
     "Astraea35",
     "订阅橘鸦AI日报并进行AI总结（魔改全控版）",
-    "1.04",
+    "1.0.6",
     "https://github.com/Astraea35/astrbot_plugin_daily_ai_news_mod",
 )
 class DailyAINewsPlugin(Star):
@@ -253,10 +253,15 @@ class DailyAINewsPlugin(Star):
                 yield event.plain_result("😞 获取或生成 AI 早报失败，请稍后再试。")
                 return
 
-        render_mode = (
-            "text" if event.get_platform_name() == "telegram"
-            else self.config.get("render_mode", "text").strip().lower()
-        )
+        if telegram:
+            logo_path = self._get_logo_path()
+            if logo_path and Image is not None:
+                yield event.chain_result([Image.fromFileSystem(logo_path), Plain(text)])
+            else:
+                yield event.plain_result(text)
+            return
+
+        render_mode = self.config.get("render_mode", "text").strip().lower()
         if render_mode == "image":
             img_path = await self._render_text_to_image(text, article_date)
             if img_path and os.path.exists(img_path):
@@ -432,10 +437,15 @@ class DailyAINewsPlugin(Star):
         for umo in targets:
             try:
                 platform = self.context.get_platform_inst(umo.split(":", 1)[0])
-                outgoing = (
-                    MessageChain([Plain(await self._get_or_create_summary(article, article_date, telegram=True) or text)])
-                    if platform and platform.meta().name == "telegram" else chain
-                )
+                if platform and platform.meta().name == "telegram":
+                    summary_text = await self._get_or_create_summary(article, article_date, telegram=True) or text
+                    logo_path = self._get_logo_path()
+                    tg_chain = [Plain(summary_text)]
+                    if logo_path and Image is not None:
+                        tg_chain.insert(0, Image.fromFileSystem(logo_path))
+                    outgoing = MessageChain(tg_chain)
+                else:
+                    outgoing = chain
                 await self.context.send_message(umo, outgoing)
                 success_count += 1
             except Exception: pass
@@ -515,9 +525,40 @@ class DailyAINewsPlugin(Star):
         except Exception: pass
         return None
 
+    def _get_logo_path(self) -> Optional[str]:
+        base_dir = Path(__file__).resolve().parent
+        for candidate in (
+            base_dir / "logo.png",
+            base_dir / "astrbot_plugin_daily_ai_news_mod" / "logo.png",
+        ):
+            if candidate.exists() and candidate.stat().st_size > 0:
+                return str(candidate)
+        return None
+
     def _format_summary(self, title: str, url: str, summary: str, article_date: str, *, telegram: bool = False) -> str:
         if telegram:
-            return f"**AI 早报**\n\n{article_date}\n{title}\n\n{summary.strip()}\n\n**原文**\n{url}"
+            clean_title = re.sub(r"\s+", " ", title).strip()
+            cleaned_lines = []
+            for line in summary.strip().splitlines():
+                l = line.strip()
+                if not l:
+                    continue
+                if re.match(r"^#{1,6}\s+", l):
+                    cleaned_lines.append(f"> **{re.sub(r'^#{1,6}\s+', '', l)}**")
+                elif re.match(r"^[-*•]\s+", l):
+                    cleaned_lines.append(f"> • {re.sub(r'^[-*•]\s+', '', l)}")
+                elif re.match(r"^\d+[.)]\s+", l):
+                    cleaned_lines.append(f"> {l}")
+                else:
+                    cleaned_lines.append(f"> {l}")
+            quote_block = "\n".join(cleaned_lines) if cleaned_lines else f"> {summary.strip()}"
+            link_str = f"[阅读原文]({url})" if url else "暂无"
+            return (
+                f"📰 **AI 科技早报** · `{article_date}`\n\n"
+                f"**【{clean_title}】**\n\n"
+                f"{quote_block}\n\n"
+                f"🔗 来源：{link_str}"
+            )
         return f"📰 AI 早报速递 | {article_date}\n============================\n\n📌 原文：{title}\n\n🤖 AI 总结：\n\n{summary}\n\n============================\n🔗 原文链接：{url}\n💡 发送 /ainews 随时获取最新资讯"
 
     def _format_fallback(self, article: Dict, article_date: str, *, telegram: bool = False) -> str:

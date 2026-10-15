@@ -1,6 +1,6 @@
 name: "astrbot_plugin_daily_ai_news_mod"
 display_name: "每日AI资讯推送 (魔改版)"
 desc: "订阅橘鸦AI日报并进行AI总结（支持Playwright高清长图渲染）"
-version: "1.05"
-author: "Astraea"
+version: "1.0.6"
+author: "Astraea35"
 repo: "https://github.com/Astraea35/astrbot_plugin_daily_ai_news_mod"
