@@ -6,3 +6,6 @@ upload.py
 upload.bat
 .pytest_cache/
 astrbot_plugin_daily_ai_news_mod/
+
+# Keep AstrBot instance configuration out of the plugin repository.
+/data/cmd_config.json
